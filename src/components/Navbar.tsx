@@ -10,6 +10,7 @@ import {
   PanelRightOpen // Icono para cuando la barra está cerrada y se puede abrir
 } from 'lucide-react';
 import logo from '../assets/Logo.png';
+import { Toast, useToast } from './Toast';
 
 interface NavbarProps {
   currentView: string;
@@ -21,12 +22,26 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleCollapse }) => {
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false); // Estado para controlar si está colapsada
+  const { toast, showToast, hideToast } = useToast();
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'bonds', label: 'Bonos', icon: BarChart2 },
-    { id: 'config', label: 'Configuración', icon: Settings },
-  ];
+  // Opciones de navegación según el rol del usuario
+  const getNavItems = () => {
+    if (user?.role === 'emisor') {
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'bonds', label: 'Gestionar Bonos', icon: BarChart2 },
+        { id: 'config', label: 'Configuración', icon: Settings },
+      ];
+    } else if (user?.role === 'inversor') {
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'analysis', label: 'Análisis de Bonos', icon: BarChart2 },
+      ];
+    }
+    return [];
+  };
+
+  const navItems = getNavItems();
 
   const accentColor = '#28F09D';
   const darkBgColor = 'rgba(8, 16, 40, 1)';
@@ -90,15 +105,27 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
             return (
                 <button
                     key={item.id}
-                    onClick={() => onViewChange(item.id)}
+                    onClick={() => {
+                      // Para inversores, solo permitir dashboard
+                      if (user?.role === 'inversor' && item.id !== 'dashboard') {
+                        showToast(
+                          'Como inversor, solo puedes ver el análisis de bonos. Los emisores son quienes crean y gestionan bonos.',
+                          'info'
+                        );
+                        return;
+                      }
+                      onViewChange(item.id);
+                    }}
                     className={`
                 flex items-center w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                 ${isActive
                         ? 'text-black font-semibold'
                         : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                     }
+                ${user?.role === 'inversor' && item.id !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}
               `}
                     style={isActive ? { backgroundColor: accentColor } : {}}
+                    disabled={user?.role === 'inversor' && item.id !== 'dashboard'}
                 >
                   <Icon className={`h-5 w-5 ${!isCollapsed ? 'mr-3' : ''}`} /> {/* Elimina margen si está colapsado */}
                   {!isCollapsed && item.label} {/* Solo muestra el texto si NO está colapsado */}
@@ -118,6 +145,15 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
                 <>
                   <span className="text-gray-400 text-xs">Bienvenido,</span>
                   <span className="font-semibold text-lg text-white">{user?.name}</span>
+                  <span 
+                    className={`text-xs px-2 py-1 rounded-full font-medium mt-1 ${
+                      user?.role === 'emisor' 
+                        ? 'bg-blue-900/50 text-blue-300' 
+                        : 'bg-green-900/50 text-green-300'
+                    }`}
+                  >
+                    {user?.role === 'emisor' ? '👔 Emisor' : '💰 Inversor'}
+                  </span>
                 </>
             )}
           </div>
@@ -133,6 +169,14 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
             {/* Centra el icono si está colapsado */}
           </button>
         </div>
+        
+        {/* Toast de notificaciones */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          show={toast.show}
+          onClose={hideToast}
+        />
       </nav>
   );
 };

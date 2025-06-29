@@ -1,6 +1,7 @@
 import React from 'react';
 import type { BondResults, BondData } from '../types';
-import { TrendingUp, Clock, Target, DollarSign } from 'lucide-react';
+import { TrendingUp, Clock, Target, DollarSign, Download } from 'lucide-react';
+import { exportCashFlowToCSV } from '../utils/exportUtils';
 
 interface BondResultsProps {
   bondData: BondData;
@@ -140,7 +141,16 @@ const BondResults: React.FC<BondResultsProps> = ({ bondData, results }) => {
 
       {/* Tabla de Flujo de Caja */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Flujo de Caja - Método Americano</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Flujo de Caja - Método Americano</h3>
+          <button
+            onClick={() => exportCashFlowToCSV(bondData, results.cashFlow, results)}
+            className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

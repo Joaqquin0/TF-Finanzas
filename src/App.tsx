@@ -9,7 +9,7 @@ import Configuration from './components/Configuration';
 import './App.css';
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [currentView, setCurrentView] = useState('dashboard');
     const [sidebarWidth, setSidebarWidth] = useState('ml-64'); // Estado para el ancho de la barra lateral
 
@@ -22,14 +22,25 @@ const AppContent: React.FC = () => {
     };
 
     const renderView = () => {
-        switch (currentView) {
-            case 'bonds':
-                return <BondsList />;
-            case 'config':
-                return <Configuration />;
-            default:
-                return <Dashboard />;
+        // Para inversores, solo mostrar dashboard
+        if (user?.role === 'inversor') {
+            return <Dashboard />;
         }
+
+        // Para emisores, permitir navegación completa
+        if (user?.role === 'emisor') {
+            switch (currentView) {
+                case 'bonds':
+                    return <BondsList />;
+                case 'config':
+                    return <Configuration />;
+                default:
+                    return <Dashboard />;
+            }
+        }
+
+        // Fallback
+        return <Dashboard />;
     };
 
     return (

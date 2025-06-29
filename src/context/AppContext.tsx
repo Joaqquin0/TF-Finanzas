@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, BondData, AppConfig } from '../types';
+import { 
+  loadBondsFromLocalStorage, 
+  saveBondsToLocalStorage, 
+  loadConfigFromLocalStorage, 
+  saveConfigToLocalStorage 
+} from '../utils/localStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -25,15 +31,24 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const defaultUsers: User[] = [
   {
     id: '1',
-    username: 'admin',
-    password: 'admin123',
-    name: 'Administrador',
+    username: 'emisor',
+    password: 'emisor123',
+    name: 'Empresa Emisora',
+    role: 'emisor',
   },
   {
     id: '2',
-    username: 'usuario',
-    password: 'usuario123',
-    name: 'Usuario Demo',
+    username: 'inversor',
+    password: 'inversor123',
+    name: 'Inversor Demo',
+    role: 'inversor',
+  },
+  {
+    id: '3',
+    username: 'admin',
+    password: 'admin123',
+    name: 'Administrador',
+    role: 'emisor', // Admin tiene permisos de emisor
   },
 ];
 
@@ -79,35 +94,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [bonds, setBonds] = useState<BondData[]>([]);
-  const [config, setConfig] = useState<AppConfig>({
-    currency: 'PEN',
-    interestType: 'effective',
-    capitalization: 12,
+  // Cargar datos del localStorage al inicializar
+  const [bonds, setBonds] = useState<BondData[]>(() => loadBondsFromLocalStorage());
+  const [config, setConfig] = useState<AppConfig>(() => {
+    const savedConfig = loadConfigFromLocalStorage();
+    return savedConfig || {
+      currency: 'PEN',
+      interestType: 'effective',
+      capitalization: 12,
+    };
   });
 
+  // Guardar bonos en localStorage cada vez que cambien
   useEffect(() => {
-    // Cargar datos guardados
-    const savedBonds = localStorage.getItem('bonds');
-    const savedConfig = localStorage.getItem('appConfig');
+    saveBondsToLocalStorage(bonds);
+  }, [bonds]);
 
-    if (savedBonds) {
-      setBonds(JSON.parse(savedBonds));
-    }
-
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig));
-    }
-  }, []);
+  // Guardar configuración en localStorage cada vez que cambie
+  useEffect(() => {
+    saveConfigToLocalStorage(config);
+  }, [config]);
 
   const saveBonds = (newBonds: BondData[]) => {
     setBonds(newBonds);
-    localStorage.setItem('bonds', JSON.stringify(newBonds));
   };
 
   const saveConfig = (newConfig: AppConfig) => {
     setConfig(newConfig);
-    localStorage.setItem('appConfig', JSON.stringify(newConfig));
   };
 
   const addBond = (bondData: Omit<BondData, 'id' | 'createdAt' | 'updatedAt'>) => {
