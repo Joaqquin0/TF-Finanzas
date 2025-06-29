@@ -98,39 +98,51 @@ export const calculateConvexity = (cashFlow: CashFlowItem[], marketRate: number,
 };
 
 // Función para calcular TCEA (Tasa de Coste Efectivo Anual)
-export const calculateTCEA = (bondData: BondData, presentValue: number): number => {
+export const calculateTCEA = (bondData: BondData, emissionPrice: number): number => {
   const { nominalValue, maturityPeriods, frequency } = bondData;
-  const totalPeriods = maturityPeriods;
-  const yearsToMaturity = totalPeriods / frequency;
+  const yearsToMaturity = maturityPeriods / frequency;
   
-  // TCEA = (Valor Nominal / Precio de Emisión)^(1/años) - 1
-  return Math.pow(nominalValue / presentValue, 1 / yearsToMaturity) - 1;
+  // TCEA = (Precio de Emisión / Valor Nominal)^(1/años) - 1
+  // Representa el costo financiero anual para el emisor
+  return Math.pow(emissionPrice / nominalValue, 1 / yearsToMaturity) - 1;
 };
 
 // Función para calcular TREA (Tasa de Rendimiento Efectivo Anual)
 export const calculateTREA = (cashFlow: CashFlowItem[], investmentAmount: number, frequency: number): number => {
-  // Usamos el método de Newton-Raphson para encontrar la TIR
+  // Usamos el método de Newton-Raphson para encontrar la TIR (Tasa Interna de Retorno)
   let rate = 0.1; // Tasa inicial del 10%
   const tolerance = 1e-10;
   const maxIterations = 100;
   
   for (let i = 0; i < maxIterations; i++) {
-    let npv = -investmentAmount;
+    // Calculamos el VPN y su derivada
+    let npv = -investmentAmount; // Flujo inicial negativo (inversión)
     let npvDerivative = 0;
     
     cashFlow.forEach((item, index) => {
       const period = index + 1;
-      const factor = Math.pow(1 + rate / frequency, period);
+      const periodRate = rate / frequency;
+      const factor = Math.pow(1 + periodRate, period);
+      
+      // VPN: suma de flujos descontados
       npv += item.totalPayment / factor;
-      npvDerivative -= (period * item.totalPayment) / (frequency * factor * (1 + rate / frequency));
+      
+      // Derivada del VPN respecto a la tasa
+      npvDerivative -= (period * item.totalPayment) / (frequency * factor * (1 + periodRate));
     });
     
+    // Si el VPN es suficientemente pequeño, hemos encontrado la solución
     if (Math.abs(npv) < tolerance) break;
     
+    // Actualizar la tasa usando Newton-Raphson: x_{n+1} = x_n - f(x_n)/f'(x_n)
     rate = rate - npv / npvDerivative;
+    
+    // Evitar tasas negativas extremas
+    if (rate < -0.99) rate = -0.99;
   }
   
-  return rate;
+  // Convertir la tasa periódica a efectiva anual
+  return Math.pow(1 + rate / frequency, frequency) - 1;
 };
 
 // Función para calcular el precio máximo del mercado
@@ -152,8 +164,13 @@ export const calculateBondResults = (bondData: BondData): BondResults => {
   const duration = calculateDuration(cashFlow, effectiveMarketRate, bondData.frequency, presentValue);
   const modifiedDuration = calculateModifiedDuration(duration, effectiveMarketRate, bondData.frequency);
   const convexity = calculateConvexity(cashFlow, effectiveMarketRate, bondData.frequency, presentValue);
+  
+  // TCEA: Costo para el emisor (usa el precio de emisión = present value)
   const tcea = calculateTCEA(bondData, presentValue);
+  
+  // TREA: Rendimiento para el inversionista (TIR de los flujos)
   const trea = calculateTREA(cashFlow, presentValue, bondData.frequency);
+  
   const maxMarketPrice = calculateMaxMarketPrice(cashFlow, effectiveMarketRate, bondData.frequency);
   
   return {
