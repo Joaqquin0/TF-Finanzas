@@ -18,9 +18,7 @@ export const calculateAmericanBondCashFlow = (bondData: BondData): CashFlowItem[
   // Calcular el cupón por período
   const couponPayment = (nominalValue * couponRate) / frequency;
   
-  // Calcular el pago de capital por período (método americano)
-  const capitalPaymentPerPeriod = nominalValue / maturityPeriods;
-  
+  // En el método americano, el capital se paga SOLO en el último período
   let outstandingBalance = nominalValue;
   
   for (let period = 1; period <= maturityPeriods; period++) {
@@ -39,10 +37,17 @@ export const calculateAmericanBondCashFlow = (bondData: BondData): CashFlowItem[
         capitalPayment = 0;
       }
     } else {
-      // Períodos normales
+      // Períodos normales: siempre se pagan intereses
       coupon = couponPayment;
-      capitalPayment = capitalPaymentPerPeriod;
-      outstandingBalance -= capitalPayment;
+      
+      // MÉTODO AMERICANO: Capital solo en el último período
+      if (period === maturityPeriods) {
+        capitalPayment = nominalValue;
+        outstandingBalance = 0;
+      } else {
+        capitalPayment = 0;
+        // El saldo pendiente sigue siendo el valor nominal hasta el último período
+      }
     }
     
     const totalPayment = coupon + capitalPayment;
@@ -98,13 +103,43 @@ export const calculateConvexity = (cashFlow: CashFlowItem[], marketRate: number,
 };
 
 // Función para calcular TCEA (Tasa de Coste Efectivo Anual)
-export const calculateTCEA = (bondData: BondData, emissionPrice: number): number => {
-  const { nominalValue, maturityPeriods, frequency } = bondData;
-  const yearsToMaturity = maturityPeriods / frequency;
+export const calculateTCEA = (bondData: BondData, cashFlow: CashFlowItem[], emissionPrice: number): number => {
+  // TCEA es la TIR desde la perspectiva del emisor
+  // Flujo del emisor: +Valor recibido inicialmente, -pagos futuros
   
-  // TCEA = (Precio de Emisión / Valor Nominal)^(1/años) - 1
-  // Representa el costo financiero anual para el emisor
-  return Math.pow(emissionPrice / nominalValue, 1 / yearsToMaturity) - 1;
+  // Usamos el método de Newton-Raphson para encontrar la TIR del emisor
+  let rate = 0.1; // Tasa inicial del 10%
+  const tolerance = 1e-10;
+  const maxIterations = 100;
+  
+  for (let i = 0; i < maxIterations; i++) {
+    let npv = emissionPrice; // Flujo inicial positivo (el emisor recibe dinero)
+    let npvDerivative = 0;
+    
+    cashFlow.forEach((item, index) => {
+      const period = index + 1;
+      const periodRate = rate / bondData.frequency;
+      const factor = Math.pow(1 + periodRate, period);
+      
+      // VPN: resta los pagos que hace el emisor (flujos negativos para el emisor)
+      npv -= item.totalPayment / factor;
+      
+      // Derivada del VPN respecto a la tasa
+      npvDerivative += (period * item.totalPayment) / (bondData.frequency * factor * (1 + periodRate));
+    });
+    
+    // Si el VPN es suficientemente pequeño, hemos encontrado la solución
+    if (Math.abs(npv) < tolerance) break;
+    
+    // Actualizar la tasa usando Newton-Raphson
+    rate = rate - npv / npvDerivative;
+    
+    // Evitar tasas negativas extremas
+    if (rate < -0.99) rate = -0.99;
+  }
+  
+  // Convertir la tasa periódica a efectiva anual
+  return Math.pow(1 + rate / bondData.frequency, bondData.frequency) - 1;
 };
 
 // Función para calcular TREA (Tasa de Rendimiento Efectivo Anual)
@@ -146,9 +181,10 @@ export const calculateTREA = (cashFlow: CashFlowItem[], investmentAmount: number
 };
 
 // Función para calcular el precio máximo del mercado
-export const calculateMaxMarketPrice = (cashFlow: CashFlowItem[], marketRate: number, frequency: number): number => {
-  // El precio máximo es el valor presente usando la tasa de mercado
-  return calculatePresentValue(cashFlow, marketRate, frequency);
+export const calculateMaxMarketPrice = (cashFlow: CashFlowItem[], couponRate: number, frequency: number): number => {
+  // El precio máximo del mercado se calcula usando la tasa cupón como tasa de descuento
+  // Representa el escenario donde el mercado estaría dispuesto a pagar más (menor exigencia de rendimiento)
+  return calculatePresentValue(cashFlow, couponRate, frequency);
 };
 
 // Función principal para calcular todos los resultados del bono
@@ -165,13 +201,18 @@ export const calculateBondResults = (bondData: BondData): BondResults => {
   const modifiedDuration = calculateModifiedDuration(duration, effectiveMarketRate, bondData.frequency);
   const convexity = calculateConvexity(cashFlow, effectiveMarketRate, bondData.frequency, presentValue);
   
-  // TCEA: Costo para el emisor (usa el precio de emisión = present value)
-  const tcea = calculateTCEA(bondData, presentValue);
+  // TCEA: Costo para el emisor (asume emisión a valor nominal)
+  const tcea = calculateTCEA(bondData, cashFlow, bondData.nominalValue);
   
-  // TREA: Rendimiento para el inversionista (TIR de los flujos)
+  // TREA: Rendimiento para el inversionista (basado en precio de mercado)
   const trea = calculateTREA(cashFlow, presentValue, bondData.frequency);
   
-  const maxMarketPrice = calculateMaxMarketPrice(cashFlow, effectiveMarketRate, bondData.frequency);
+  // Precio máximo del mercado usando la tasa cupón como descuento
+  let effectiveCouponRate = bondData.couponRate;
+  if (bondData.interestType === 'nominal' && bondData.capitalization) {
+    effectiveCouponRate = nominalToEffective(bondData.couponRate, bondData.capitalization);
+  }
+  const maxMarketPrice = calculateMaxMarketPrice(cashFlow, effectiveCouponRate, bondData.frequency);
   
   return {
     cashFlow,
