@@ -36,6 +36,14 @@ const BondResults: React.FC<BondResultsProps> = ({ bondData, results }) => {
     }
   };
 
+  const getInterestTypeText = (type: string) => {
+    switch (type) {
+      case 'effective': return 'Efectiva';
+      case 'nominal': return 'Nominal';
+      default: return type;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Información del Bono */}
@@ -51,9 +59,19 @@ const BondResults: React.FC<BondResultsProps> = ({ bondData, results }) => {
             <p className="font-medium">{formatCurrency(bondData.nominalValue)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Tasa de Cupón</p>
+            <p className="text-sm text-gray-600">Tasa de Interés del Bono</p>
             <p className="font-medium">{formatPercentage(bondData.couponRate)}</p>
           </div>
+          <div>
+            <p className="text-sm text-gray-600">Tipo de Interés</p>
+            <p className="font-medium">{getInterestTypeText(bondData.interestType)}</p>
+          </div>
+          {bondData.interestType === 'nominal' && bondData.capitalization && (
+            <div>
+              <p className="text-sm text-gray-600">Capitalización</p>
+              <p className="font-medium">{bondData.capitalization} veces por año</p>
+            </div>
+          )}
           <div>
             <p className="text-sm text-gray-600">Períodos</p>
             <p className="font-medium">{bondData.maturityPeriods}</p>
@@ -63,7 +81,7 @@ const BondResults: React.FC<BondResultsProps> = ({ bondData, results }) => {
             <p className="font-medium">{getFrequencyText(bondData.frequency)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Tasa de Mercado</p>
+            <p className="text-sm text-gray-600">Tasa de Descuento del Mercado</p>
             <p className="font-medium">{formatPercentage(bondData.marketRate)}</p>
           </div>
           <div>

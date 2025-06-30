@@ -86,8 +86,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
           <button
               onClick={toggleCollapse}
               className="absolute right-0 top-5 -translate-y-1/2 bg-gray-700/50 hover:bg-gray-700 rounded-full p-1 transition-colors duration-200"
-
-              title={isCollapsed ? "Expandir" : "Colapsar"}
           >
             {isCollapsed ? (
                 <PanelRightOpen className="h-5 w-5 text-gray-300" /> // Icono para mostrar

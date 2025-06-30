@@ -84,7 +84,7 @@ const EmisorDashboard: React.FC = () => {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
-                      Tasa Cupón Promedio
+                      Tasa de Interés Promedio
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
                       {avgCouponRate.toFixed(2)}%

@@ -206,7 +206,6 @@ const BondsList: React.FC = () => {
                     <button
                       onClick={() => handleViewResults(bond.id)}
                       className="text-green-600 hover:text-green-800 transition-colors"
-                      title="Ver resultados"
                     >
                       <Eye size={16} />
                     </button>
@@ -216,14 +215,12 @@ const BondsList: React.FC = () => {
                         setShowForm(true);
                       }}
                       className="text-blue-600 hover:text-blue-800 transition-colors"
-                      title="Editar"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteBond(bond.id)}
                       className="text-red-600 hover:text-red-800 transition-colors"
-                      title="Eliminar"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -238,7 +235,7 @@ const BondsList: React.FC = () => {
                   </div>
                   
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Tasa Cupón:</span>
+                    <span className="text-sm text-gray-600">Tasa de Interés:</span>
                     <span className="text-sm font-medium">{formatPercentage(bond.couponRate)}</span>
                   </div>
                   
@@ -268,6 +265,13 @@ const BondsList: React.FC = () => {
                       {bond.interestType === 'effective' ? 'Efectiva' : 'Nominal'}
                     </span>
                   </div>
+                  
+                  {bond.interestType === 'nominal' && bond.capitalization && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Capitalización:</span>
+                      <span className="text-sm font-medium">{bond.capitalization}/año</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer */}

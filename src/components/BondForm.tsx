@@ -59,7 +59,7 @@ const BondForm: React.FC<BondFormProps> = ({ bondId, onClose, onSave }) => {
     }
 
     if (formData.couponRate < 0) {
-      newErrors.couponRate = 'La tasa de cupón no puede ser negativa';
+      newErrors.couponRate = 'La tasa de interés del bono no puede ser negativa';
     }
 
     if (formData.maturityPeriods <= 0) {
@@ -67,7 +67,7 @@ const BondForm: React.FC<BondFormProps> = ({ bondId, onClose, onSave }) => {
     }
 
     if (formData.marketRate < 0) {
-      newErrors.marketRate = 'La tasa de mercado no puede ser negativa';
+      newErrors.marketRate = 'La tasa de descuento del mercado no puede ser negativa';
     }
 
     if (formData.gracePeriods < 0) {
@@ -164,22 +164,26 @@ const BondForm: React.FC<BondFormProps> = ({ bondId, onClose, onSave }) => {
               )}
             </div>
 
-            {/* Tasa de cupón */}
+            {/* Tasa de interés del bono */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tasa de Cupón (decimal) *
+                Tasa de Interés del Bono (%) *
               </label>
               <input
                 type="number"
                 name="couponRate"
-                value={formData.couponRate}
-                onChange={handleChange}
+                value={formData.couponRate * 100}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  couponRate: parseFloat(e.target.value) / 100 || 0
+                }))}
                 min="0"
-                step="0.001"
+                max="100"
+                step="0.01"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.couponRate ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Ej: 0.10 para 10%"
+                placeholder="Ej: 10.50"
               />
               {errors.couponRate && (
                 <div className="flex items-center mt-1 text-red-600">
@@ -230,22 +234,26 @@ const BondForm: React.FC<BondFormProps> = ({ bondId, onClose, onSave }) => {
               </select>
             </div>
 
-            {/* Tasa de mercado */}
+            {/* Tasa de descuento del mercado */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tasa de Mercado (decimal) *
+                Tasa de Descuento del Mercado (%) *
               </label>
               <input
                 type="number"
                 name="marketRate"
-                value={formData.marketRate}
-                onChange={handleChange}
+                value={formData.marketRate * 100}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  marketRate: parseFloat(e.target.value) / 100 || 0
+                }))}
                 min="0"
-                step="0.001"
+                max="100"
+                step="0.01"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.marketRate ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Ej: 0.12 para 12%"
+                placeholder="Ej: 12.00"
               />
               {errors.marketRate && (
                 <div className="flex items-center mt-1 text-red-600">

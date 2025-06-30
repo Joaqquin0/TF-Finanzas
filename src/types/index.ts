@@ -10,11 +10,11 @@ export interface User {
 export interface BondData {
   id: string;
   name: string;
-  nominalValue: number; // Valor nominal
-  couponRate: number; // Tasa de cupón
+  nominalValue: number; // Valor nominal del bono
+  couponRate: number; // Tasa de interés que paga el bono
   maturityPeriods: number; // Número de períodos hasta vencimiento
   frequency: number; // Frecuencia de pagos (1=anual, 2=semestral, 4=trimestral, 12=mensual)
-  marketRate: number; // Tasa de mercado
+  marketRate: number; // Tasa de descuento del mercado
   gracePeriods: number; // Períodos de gracia
   graceType: 'total' | 'partial' | 'none'; // Tipo de gracia
   currency: 'PEN' | 'USD' | 'EUR';
