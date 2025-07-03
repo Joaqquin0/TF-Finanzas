@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { AlertCircle, User, KeyRound } from 'lucide-react';
+import { AlertCircle, User, KeyRound, CheckCircle } from 'lucide-react';
 import backgroundImage from '../assets/164ca665-b3af-401e-8434-96a0b40608c9 1.png';
 import logo from '../assets/Logo.png';
-
-// Import useAuth from your main context file
-// IMPORTANT: Adjust this path if your AppContext.tsx is located differently
 import { useAuth } from '../context/AppContext';
+import Register from './Register';
+import type { User as UserType } from '../types';
 
 const Login: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth(); // Use the useAuth hook from AppContext
+    const [successMessage, setSuccessMessage] = useState('');
+    const [showRegister, setShowRegister] = useState(false);
+    const { login } = useAuth();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccessMessage('');
 
         if (!username || !password) {
             setError('Por favor, ingrese usuario y contraseña.');
@@ -28,6 +30,45 @@ const Login: React.FC = () => {
             setPassword('');
         }
     };
+
+    const handleRegisterSuccess = (user: UserType) => {
+        // Mostrar mensaje de éxito y regresar al login
+        setSuccessMessage(`¡Bienvenido ${user.name}! Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.`);
+        setShowRegister(false);
+        setError('');
+        
+        // Pre-llenar el campo de usuario para facilitar el login
+        setUsername(user.username);
+        
+        // Limpiar el mensaje después de unos segundos
+        setTimeout(() => {
+            setSuccessMessage('');
+        }, 5000);
+    };
+
+    const handleShowRegister = () => {
+        setShowRegister(true);
+        setError('');
+        setSuccessMessage('');
+        setUsername('');
+        setPassword('');
+    };
+
+    const handleCancelRegister = () => {
+        setShowRegister(false);
+        setError('');
+        setSuccessMessage('');
+    };
+
+    // Si se está mostrando el registro, renderizar el componente Register
+    if (showRegister) {
+        return (
+            <Register 
+                onSuccess={handleRegisterSuccess}
+                onCancel={handleCancelRegister}
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen relative flex items-center justify-center p-4 font-sans"
@@ -107,6 +148,13 @@ const Login: React.FC = () => {
                                 </div>
                             )}
 
+                            {successMessage && (
+                                <div className="flex items-center space-x-2 text-green-400 bg-green-900/30 p-3 rounded-lg">
+                                    <CheckCircle size={20} />
+                                    <span>{successMessage}</span>
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
                                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#161B22] focus:ring-blue-500"
@@ -134,8 +182,19 @@ const Login: React.FC = () => {
                             </div>
                         </form>
 
-                        <div className="text-center text-gray-400 mt-8 text-sm">
-                            Al registrarte, aceptas nuestros <a href="#" className="text-[#28F09D] hover:underline">Términos y Condiciones</a>.
+                        <div className="text-center text-gray-400 mt-8 text-sm space-y-2">
+                            <div>
+                                Al registrarte, aceptas nuestros <a href="#" className="text-[#28F09D] hover:underline">Términos y Condiciones</a>.
+                            </div>
+                            <div>
+                                <button
+                                    type="button"
+                                    onClick={handleShowRegister}
+                                    className="text-[#28F09D] hover:text-green-400 transition-colors underline"
+                                >
+                                    ¿No tienes cuenta? Regístrate aquí
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
