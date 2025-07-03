@@ -5,6 +5,17 @@ export interface User {
   password: string;
   name: string;
   role: 'emisor' | 'inversor';
+  email: string;
+  // Datos específicos del emisor
+  companyName?: string;
+  ruc?: string;
+  sector?: string;
+  // Datos específicos del inversor
+  investorType?: 'individual' | 'institutional';
+  riskProfile?: 'conservative' | 'moderate' | 'aggressive';
+  investmentAmount?: number;
+  createdAt: Date;
+  lastLogin?: Date;
 }
 
 export interface BondData {

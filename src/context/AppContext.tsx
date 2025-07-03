@@ -4,7 +4,12 @@ import {
   loadBondsFromLocalStorage, 
   saveBondsToLocalStorage, 
   loadConfigFromLocalStorage, 
-  saveConfigToLocalStorage 
+  saveConfigToLocalStorage,
+  loadUsersFromLocalStorage,
+  saveUsersToLocalStorage,
+  loadCurrentUserFromLocalStorage,
+  removeCurrentUserFromLocalStorage,
+  validateUserCredentials
 } from '../utils/localStorage';
 
 interface AuthContextType {
@@ -34,44 +39,80 @@ const defaultUsers: User[] = [
     username: 'emisor',
     password: 'emisor123',
     name: 'Empresa Emisora',
+    email: 'emisor@demo.com',
     role: 'emisor',
+    createdAt: new Date('2024-01-01'),
+    companyName: 'Demo Corp S.A.C.',
+    ruc: '20123456789',
+    sector: 'Tecnología'
   },
   {
     id: '2',
     username: 'inversor',
     password: 'inversor123',
     name: 'Inversor Demo',
+    email: 'inversor@demo.com',
     role: 'inversor',
+    createdAt: new Date('2024-01-01'),
+    investorType: 'individual',
+    riskProfile: 'moderate',
+    investmentAmount: 50000
   },
   {
     id: '3',
     username: 'admin',
     password: 'admin123',
     name: 'Administrador',
+    email: 'admin@demo.com',
     role: 'emisor', // Admin tiene permisos de emisor
+    createdAt: new Date('2024-01-01'),
+    companyName: 'Admin Corp',
+    ruc: '20987654321',
+    sector: 'Servicios'
   },
 ];
+
+// Función para inicializar usuarios demo si no existen
+const initializeDemoUsers = () => {
+  const existingUsers = loadUsersFromLocalStorage();
+  
+  // Si no hay usuarios, crear los de demo
+  if (existingUsers.length === 0) {
+    saveUsersToLocalStorage(defaultUsers);
+  } else {
+    // Verificar que los usuarios demo existan, si no, agregarlos
+    const usernames = existingUsers.map(u => u.username);
+    const missingDemoUsers = defaultUsers.filter(user => !usernames.includes(user.username));
+    
+    if (missingDemoUsers.length > 0) {
+      const updatedUsers = [...existingUsers, ...missingDemoUsers];
+      saveUsersToLocalStorage(updatedUsers);
+    }
+  }
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Inicializar usuarios demo
+    initializeDemoUsers();
+    
     // Verificar si hay una sesión guardada
-    const savedUser = localStorage.getItem('currentUser');
+    const savedUser = loadCurrentUserFromLocalStorage();
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      setUser(savedUser);
     }
   }, []);
 
   const login = (username: string, password: string): boolean => {
-    const foundUser = defaultUsers.find(
-      u => u.username === username && u.password === password
-    );
+    // Validar credenciales usando la función de localStorage
+    const foundUser = validateUserCredentials(username, password);
 
     if (foundUser) {
+      // No guardar la contraseña en la sesión por seguridad
       const userWithoutPassword = { ...foundUser, password: '' };
       setUser(userWithoutPassword);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       return true;
     }
 
@@ -80,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('currentUser');
+    removeCurrentUserFromLocalStorage();
   };
 
   const value = {

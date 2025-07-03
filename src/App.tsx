@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import BondsList from './components/BondsList';
 import Configuration from './components/Configuration';
+import UserProfile from './components/UserProfile';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -22,9 +23,14 @@ const AppContent: React.FC = () => {
     };
 
     const renderView = () => {
-        // Para inversores, solo mostrar dashboard
+        // Para inversores, permitir dashboard y perfil
         if (user?.role === 'inversor') {
-            return <Dashboard />;
+            switch (currentView) {
+                case 'profile':
+                    return <UserProfile />;
+                default:
+                    return <Dashboard />;
+            }
         }
 
         // Para emisores, permitir navegación completa
@@ -34,6 +40,8 @@ const AppContent: React.FC = () => {
                     return <BondsList />;
                 case 'config':
                     return <Configuration />;
+                case 'profile':
+                    return <UserProfile />;
                 default:
                     return <Dashboard />;
             }

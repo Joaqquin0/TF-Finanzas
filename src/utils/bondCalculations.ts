@@ -13,10 +13,22 @@ export const effectiveToNominal = (effectiveRate: number, capitalization: number
 // Función para calcular el flujo de caja del bono americano
 export const calculateAmericanBondCashFlow = (bondData: BondData): CashFlowItem[] => {
   const cashFlow: CashFlowItem[] = [];
-  const { nominalValue, couponRate, maturityPeriods, frequency, gracePeriods, graceType } = bondData;
+  const { nominalValue, couponRate, maturityPeriods, frequency, gracePeriods, graceType, interestType, capitalization } = bondData;
   
-  // Calcular el cupón por período
-  const couponPayment = (nominalValue * couponRate) / frequency;
+  // Calcular la tasa efectiva por período
+  let effectivePeriodRate: number;
+  
+  if (interestType === 'nominal' && capitalization) {
+    // Si es tasa nominal, primero convertir a efectiva anual, luego a efectiva del período
+    const effectiveAnnualRate = nominalToEffective(couponRate, capitalization);
+    effectivePeriodRate = Math.pow(1 + effectiveAnnualRate, 1 / frequency) - 1;
+  } else {
+    // Si es tasa efectiva anual, convertir directamente a efectiva del período
+    effectivePeriodRate = Math.pow(1 + couponRate, 1 / frequency) - 1;
+  }
+  
+  // Calcular el cupón por período usando la tasa efectiva del período
+  const couponPayment = nominalValue * effectivePeriodRate;
   
   // En el método americano, el capital se paga SOLO en el último período
   let outstandingBalance = nominalValue;

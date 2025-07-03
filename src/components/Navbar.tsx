@@ -31,11 +31,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'bonds', label: 'Gestionar Bonos', icon: BarChart2 },
         { id: 'config', label: 'Configuración', icon: Settings },
+        { id: 'profile', label: 'Mi Perfil', icon: User },
       ];
     } else if (user?.role === 'inversor') {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'analysis', label: 'Análisis de Bonos', icon: BarChart2 },
+        { id: 'profile', label: 'Mi Perfil', icon: User },
       ];
     }
     return [];
@@ -104,8 +106,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
                 <button
                     key={item.id}
                     onClick={() => {
-                      // Para inversores, solo permitir dashboard
-                      if (user?.role === 'inversor' && item.id !== 'dashboard') {
+                      // Para inversores, permitir dashboard y perfil
+                      if (user?.role === 'inversor' && item.id !== 'dashboard' && item.id !== 'profile') {
                         showToast(
                           'Como inversor, solo puedes ver el análisis de bonos. Los emisores son quienes crean y gestionan bonos.',
                           'info'
@@ -120,10 +122,10 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, onToggleColl
                         ? 'text-black font-semibold'
                         : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                     }
-                ${user?.role === 'inversor' && item.id !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}
+                ${user?.role === 'inversor' && item.id !== 'dashboard' && item.id !== 'profile' ? 'opacity-50 cursor-not-allowed' : ''}
               `}
                     style={isActive ? { backgroundColor: accentColor } : {}}
-                    disabled={user?.role === 'inversor' && item.id !== 'dashboard'}
+                    disabled={user?.role === 'inversor' && item.id !== 'dashboard' && item.id !== 'profile'}
                 >
                   <Icon className={`h-5 w-5 ${!isCollapsed ? 'mr-3' : ''}`} /> {/* Elimina margen si está colapsado */}
                   {!isCollapsed && item.label} {/* Solo muestra el texto si NO está colapsado */}
